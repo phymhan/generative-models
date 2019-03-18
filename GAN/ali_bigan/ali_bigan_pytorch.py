@@ -20,6 +20,7 @@ y_dim = mnist.train.labels.shape[1]
 h_dim = 128
 cnt = 0
 lr = 1e-3
+use_gpu = True
 
 
 def log(x):
@@ -48,6 +49,11 @@ D_ = torch.nn.Sequential(
     torch.nn.Sigmoid()
 )
 
+if use_gpu:
+    Q.cuda()
+    P.cuda()
+    D_.cuda()
+
 
 def D(X, z):
     return D_(torch.cat([X, z], 1))
@@ -68,6 +74,10 @@ for it in range(1000000):
     z = Variable(torch.randn(mb_size, z_dim))
     X, _ = mnist.train.next_batch(mb_size)
     X = Variable(torch.from_numpy(X))
+
+    if use_gpu:
+        z = z.cuda()
+        X = X.cuda()
 
     # Discriminator
     z_hat = Q(X)
@@ -99,9 +109,9 @@ for it in range(1000000):
     # Print and plot every now and then
     if it % 1000 == 0:
         print('Iter-{}; D_loss: {:.4}; G_loss: {:.4}'
-              .format(it, D_loss.data[0], G_loss.data[0]))
+              .format(it, D_loss.item(), G_loss.item()))
 
-        samples = P(z).data.numpy()[:16]
+        samples = P(z).data.cpu().numpy()[:16]
 
         fig = plt.figure(figsize=(4, 4))
         gs = gridspec.GridSpec(4, 4)

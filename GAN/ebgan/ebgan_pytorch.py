@@ -21,6 +21,7 @@ cnt = 0
 d_step = 3
 lr = 1e-3
 m = 5
+use_gpu = True
 
 
 G = torch.nn.Sequential(
@@ -37,6 +38,9 @@ D_ = torch.nn.Sequential(
     torch.nn.Linear(h_dim, X_dim),
 )
 
+if use_gpu:
+    G.cuda()
+    D_.cuda()
 
 # Energy is the MSE of autoencoder
 def D(X):
@@ -58,6 +62,10 @@ for it in range(1000000):
     z = Variable(torch.randn(mb_size, z_dim))
     X, _ = mnist.train.next_batch(mb_size)
     X = Variable(torch.from_numpy(X))
+
+    if use_gpu:
+        z = z.cuda()
+        X = X.cuda()
 
     # Dicriminator
     G_sample = G(z)
@@ -85,9 +93,9 @@ for it in range(1000000):
     # Print and plot every now and then
     if it % 1000 == 0:
         print('Iter-{}; D_loss: {:.4}; G_loss: {:.4}'
-              .format(it, D_loss.data[0], G_loss.data[0]))
+              .format(it, D_loss.cpu().item(), G_loss.cpu().item()))
 
-        samples = G(z).data.numpy()[:16]
+        samples = G(z).data.cpu().numpy()[:16]
 
         fig = plt.figure(figsize=(4, 4))
         gs = gridspec.GridSpec(4, 4)
